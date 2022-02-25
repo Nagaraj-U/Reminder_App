@@ -157,7 +157,7 @@ window.onload = (e)=>{
 
 //addReminders event
 let updateFlag = 0
-let updateRow = -1
+let updateRow;
 let prevTitle = ""
 document.getElementById('event-form').addEventListener('submit',(e)=>{
     e.preventDefault()
@@ -167,9 +167,9 @@ document.getElementById('event-form').addEventListener('submit',(e)=>{
     const notify = document.getElementById('notify-time').value;
 
     if(title === '' || dueDate === '' || dueTime == '' || notify === ''){
-        UI.showAlert("danger","all fields mandatory")
+        UI.showAlert("danger","all fields mandatory",2000)
     }else{
-        if(updateFlag){
+        if(updateFlag === 1){
             updateRow.cells[0].innerHTML = title
             updateRow.cells[1].innerHTML = dueDate
             updateRow.cells[2].innerHTML = dueTime
@@ -179,7 +179,7 @@ document.getElementById('event-form').addEventListener('submit',(e)=>{
             let event = new Reminder(title,dueDate,dueTime,notify)
             Storage.addEvent(event)
             UI.deleteAndSortTable()
-
+            console.log(Storage.getEvents());
             updateFlag = 0;
             updateRow = -1
             prevTitle = ""
@@ -210,7 +210,6 @@ document.getElementById('event-list').addEventListener('click',(e)=>{
         let title = e.target.parentElement.previousElementSibling
                     .previousElementSibling.previousElementSibling
                     .previousElementSibling.previousElementSibling.textContent
-        
         let row = e.target.parentElement.parentElement
         updateRow = row
         e.preventDefault()
@@ -227,27 +226,30 @@ document.getElementById('event-list').addEventListener('click',(e)=>{
 })
 
 
-
-
-
-
 //functions managing left time for event and arranging in ascending order
-function sortByLeftTime(a,b){
-    let diff1 = getRemaining(a.dueDate);
-    let diff2 = getRemaining(b.dueDate);
-    if(diff1 < diff2){
-        return -1;
-    }
-    return 1;
-}
+// function sortByLeftTime(a,b){
+//     let diff1 = getRemaining(a.dueDate);
+//     let diff2 = getRemaining(b.dueDate);
+//     if(diff1 < diff2){
+//         return -1;
+//     }
+//     return 1;
+// }
 
+//CUSTOM SORTING FUNFTION
+function sortByLeftTime(a,b){
+
+    if(a.dueDate == b.dueDate)
+        return a.dueTime.localeCompare(b.dueTime)
+
+    return a.dueDate.localeCompare(b.dueDate)
+}
 function getRemaining (ts) {
     const now = moment();
     const then = moment(ts);
     const diff = then.diff(now);
-
+    console.log(diff);
     let f = moment.utc(diff).format("HH:mm:ss.SSS");
-    console.log(f);
     return diff
   }
 
@@ -257,14 +259,11 @@ function displayRemainingStatus(ts){
     const then = moment(ts);
     const diff = then.diff(now);
     if(diff < 0){
-        console.log("passed");
         return "event passed"
     }else if(diff > 86400000){
-        console.log("More than a day left");
         return "more than a day left"
     }else if(diff < 3600000){
         let f = moment.utc(diff).format("HH:mm:ss.SSS");
-        console.log("left time"+f);
         return "less than a hour left";
     }
     else{
